@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tema base de la Activity (Compose define el resto del estilo). -->
+    <style name="Theme.RecetIA" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@color/verde_fresco</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

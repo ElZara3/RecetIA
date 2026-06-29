@@ -1,0 +1,21 @@
+{
+  "features": [
+    "nivel_base",
+    "mes",
+    "semana",
+    "dia_semana",
+    "es_fin_de_semana",
+    "es_quincena"
+  ],
+  "global_mean_nivel": 46.7187414500684,
+  "trained_rows": 7310,
+  "mae": 5.991720369837353,
+  "importancias": {
+    "nivel_base": 0.7061296701431274,
+    "mes": 0.024030743166804314,
+    "semana": 0.013757561333477497,
+    "dia_semana": 0.04908217117190361,
+    "es_fin_de_semana": 0.1148729994893074,
+    "es_quincena": 0.09212686866521835
+  }
+}

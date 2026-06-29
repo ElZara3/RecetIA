@@ -1,0 +1,38 @@
+# Secretos — nunca subir
+.env
+**/.env
+
+# Python (backend)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.db
+*.sqlite3
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node / Web (Fase 3)
+node_modules/
+web/dist/
+web/.vite/
+
+# Android (Fase 2)
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.iml
+
+# ML (Fase 4)
+ml/.ipynb_checkpoints/
+ml/**/*.pkl
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.claude/

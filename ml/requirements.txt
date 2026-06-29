@@ -1,0 +1,5 @@
+# Forecasting (Pilar B). El backend reusa estas libs para servir /comercio/forecast.
+xgboost>=2.0
+pandas>=2.0
+numpy>=1.26
+scikit-learn>=1.3
