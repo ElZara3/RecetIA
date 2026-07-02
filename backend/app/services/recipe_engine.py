@@ -27,7 +27,7 @@ from app.schemas.recipes import (
     RecetaLLM,
     RecetasLLM,
 )
-from app.services.llm_client import generar_con_llm
+from app.services.llm_client import generar_con_llm, llm_disponible, modelo_actual
 
 # Ventana para considerar un item "por caducar" (días).
 DIAS_POR_CADUCAR = 4
@@ -64,8 +64,8 @@ def generar_recetas(
             fuente=cacheada.payload["fuente"],
         )
 
-    # 2-3. Generar: LLM si hay clave; si no, stub determinista (demo offline).
-    if settings.llm_api_key:
+    # 2-3. Generar: LLM si hay clave para el proveedor; si no, stub (demo offline).
+    if llm_disponible():
         try:
             recetas_llm = generar_con_llm(
                 ingredientes_txt=_fmt_ingredientes(items),
@@ -81,7 +81,7 @@ def generar_recetas(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail="El motor de recetas (LLM) no está disponible por ahora.",
             ) from exc
-        fuente = f"llm:{settings.llm_model}"
+        fuente = f"llm:{modelo_actual()}"
     else:
         recetas_llm = _recetas_stub(items, por_caducar, data.n_recetas)
         fuente = "stub"

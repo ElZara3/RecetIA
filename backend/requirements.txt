@@ -13,6 +13,8 @@ python-multipart>=0.0.18
 httpx>=0.27.0
 # >=0.69 garantiza client.messages.parse(output_format=...) (salida estructurada)
 anthropic>=0.69.0,<1.0.0
+# OCR de ticket por visión cuando OCR_PROVIDER=openai (Fase 5).
+openai>=1.40.0
 
 # Forecasting (Fase 4) — el backend sirve /comercio/forecast con el modelo XGBoost.
 xgboost>=2.0

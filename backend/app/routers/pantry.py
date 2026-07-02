@@ -97,14 +97,25 @@ async def scan_ticket(
         ).all()
     }
     agregados = 0
-    for nombre in items:
-        clave = nombre.lower()
+    for prod in items:
+        clave = prod.nombre.lower()
         if clave not in existentes:
-            db.add(ItemDespensa(hogar_id=hogar.id, nombre=nombre[:120]))
+            db.add(
+                ItemDespensa(
+                    hogar_id=hogar.id,
+                    nombre=prod.nombre[:120],
+                    cantidad=prod.cantidad,
+                    unidad=(prod.unidad[:40] if prod.unidad else None),
+                )
+            )
             existentes.add(clave)
             agregados += 1
     db.commit()
-    return ScanResultado(items=items, agregados=agregados, texto_ocr=(texto or "")[:2000])
+    return ScanResultado(
+        items=[p.nombre for p in items],
+        agregados=agregados,
+        texto_ocr=(texto or "")[:2000],
+    )
 
 
 @router.delete(

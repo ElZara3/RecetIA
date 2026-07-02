@@ -15,9 +15,10 @@ android {
         versionCode = 1
         versionName = "0.1.0"
 
-        // URL del backend. En el emulador de Android, 10.0.2.2 apunta al localhost
-        // de la máquina anfitriona (donde corre uvicorn en :8000).
-        buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8000/\"")
+        // URL del backend. En el emulador de Android se usa 10.0.2.2 (alias al
+        // localhost del anfitrión). En un teléfono físico debe ser la IP LAN de la
+        // PC donde corre uvicorn --host 0.0.0.0 --port 8000 (misma Wi-Fi).
+        buildConfigField("String", "BASE_URL", "\"http://172.22.25.3:8000/\"")
     }
 
     buildTypes {

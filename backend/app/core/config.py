@@ -31,12 +31,22 @@ class Settings(BaseSettings):
     # NoDecode: evita que pydantic-settings intente json.loads de la variable de entorno.
     cors_origins: Annotated[list[str], NoDecode] = ["*"]
 
-    # LLM (Fase 1) — clave del entorno, nunca hardcodeada. Si no hay clave, el
-    # motor de recetas usa un stub determinista (fuente="stub") para dev/demo.
+    # LLM (Fase 1 — motor de recetas). Proveedor: "claude" o "openai".
+    # Sin clave para el proveedor elegido, el motor usa un stub determinista
+    # (fuente="stub") para dev/demo, sin costo de IA.
+    llm_provider: str = "claude"
     llm_api_key: str | None = None
     llm_model: str = "claude-opus-4-8"
 
-    # Fase 5 — OCR de ticket (Tesseract). Ruta opcional al binario tesseract.
+    # OpenAI — usado por el OCR (OCR_PROVIDER=openai) y/o el motor de recetas
+    # (LLM_PROVIDER=openai). Ambos comparten clave; el modelo de OCR es de visión.
+    openai_api_key: str | None = None
+    openai_model: str = "gpt-4o-mini"
+
+    # Fase 5 — OCR de ticket. Motor a usar: "tesseract" (binario local),
+    # "openai" (visión, requiere OPENAI_API_KEY) o "claude" (visión, requiere LLM_API_KEY).
+    ocr_provider: str = "tesseract"
+    # Ruta opcional al binario tesseract (solo si OCR_PROVIDER=tesseract y no está en el PATH).
     tesseract_cmd: str | None = None
     # Fase 5 — notificaciones push (FCM). Sin clave, el envío queda en stub/log.
     fcm_server_key: str | None = None
