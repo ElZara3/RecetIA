@@ -44,4 +44,5 @@ class UsuarioOut(BaseModel):
     email: EmailStr
     nombre: str
     rol: RolUsuario
+    avatar: str = "🧑‍🍳"
     created_at: datetime

@@ -36,6 +36,13 @@ class Receta(Base):
     ingredientes: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     costo_porcion: Mapped[float | None] = mapped_column(Float, nullable=True)
     porciones: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Caso Walmart (Fase 6): imagen héroe del platillo (la app la muestra en grande),
+    # ahorro estimado al cocinarla y comercio de origen (null => receta de comunidad).
+    imagen_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    ahorro_estimado_mxn: Mapped[float | None] = mapped_column(Float, nullable=True)
+    comercio_id: Mapped[int | None] = mapped_column(
+        ForeignKey("comercios.id", ondelete="SET NULL"), index=True, nullable=True
+    )
     estado_aprobacion: Mapped[EstadoAprobacion] = mapped_column(
         Enum(EstadoAprobacion, name="estado_aprobacion"),
         default=EstadoAprobacion.borrador,

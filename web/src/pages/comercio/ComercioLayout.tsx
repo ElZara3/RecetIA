@@ -46,10 +46,12 @@ export function ComercioLayout() {
         <span className="brand">RecetIA · Comercio</span>
         <nav className="nav">
           <NavLink to="/comercio" end>
-            Predicción
+            Dashboard
           </NavLink>
+          <NavLink to="/comercio/prediccion">Predicción</NavLink>
           <NavLink to="/comercio/inventory">Inventario</NavLink>
           <NavLink to="/comercio/offers">Ofertas</NavLink>
+          <NavLink to="/comercio/recetas">Recetas</NavLink>
         </nav>
         <span className="spacer" />
         <span className="muted">{comercio?.nombre ?? user?.nombre}</span>

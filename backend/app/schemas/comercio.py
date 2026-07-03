@@ -62,6 +62,8 @@ class VentaOut(BaseModel):
 class OfertaCreate(BaseModel):
     producto: str = Field(min_length=1, max_length=120)
     precio_oferta: float = Field(gt=0)
+    # Precio normal opcional para mostrar el % de descuento (Fase 6).
+    precio_normal: float | None = Field(default=None, gt=0)
     vence: date | None = None
 
 
@@ -72,7 +74,10 @@ class OfertaOut(BaseModel):
     comercio_id: int
     producto: str
     precio_oferta: float
+    precio_normal: float | None = None
     vence: date | None
+    # Receta de rescate ligada (Fase 6), si existe.
+    receta_id: int | None = None
 
 
 # --- Forecast ---

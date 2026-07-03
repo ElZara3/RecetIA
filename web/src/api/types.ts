@@ -6,6 +6,7 @@ export interface Usuario {
   email: string;
   nombre: string;
   rol: Rol;
+  avatar: string;
 }
 
 export interface UsuarioAdmin extends Usuario {
@@ -64,7 +65,9 @@ export interface Oferta {
   comercio_id: number;
   producto: string;
   precio_oferta: number;
+  precio_normal: number | null;
   vence: string | null;
+  receta_id: number | null;
 }
 
 export interface ForecastDia {
@@ -88,4 +91,43 @@ export interface Forecast {
   fuente: string;
   serie_diaria: ForecastDia[];
   productos: ForecastProducto[];
+}
+
+// --- Caso Walmart (Fase 6) ---
+export interface ProductoRiesgo {
+  nombre: string;
+  existencias: number;
+  fecha_caducidad: string | null;
+  dias_restantes: number | null;
+  precio: number | null;
+}
+
+export interface Dashboard {
+  productos_total: number;
+  en_riesgo_total: number;
+  en_riesgo: ProductoRiesgo[];
+  ofertas_activas: number;
+  recetas_publicadas: number;
+  rating_promedio: number | null;
+  resenas_total: number;
+  veces_cocinadas: number;
+  ahorro_clientes_mxn: number;
+  kg_rescatados: number;
+}
+
+export interface RescateResumen {
+  productos_en_riesgo: string[];
+  recetas: { id: number; titulo: string }[];
+  ofertas_creadas: number;
+  fuente: string;
+}
+
+export interface RecetaComercio {
+  id: number;
+  titulo: string;
+  rating_avg: number | null;
+  rating_count: number;
+  veces_cocinadas: number;
+  rescate: boolean;
+  created_at: string;
 }

@@ -23,18 +23,17 @@ verde-fresco + ámbar con la señal **"úsalo primero"** en tono positivo (§8).
 PC (donde corre uvicorn). En un dispositivo físico, cámbialo por la IP de tu PC en la
 LAN (y ajusta `network_security_config.xml`).
 
-## Flujo
-Registro/Login → (si no hay hogar) Onboarding → Mi Despensa (agregar/borrar, FAB,
-banner "úsalo primero", escanear ticket) → Sugerir recetas → Detalle (pasos, costo,
-"comprar lo que falta", agregar al plan, "cociné esto"). Desde la despensa: **Plan
-semanal** (recetas + lista de compras agrupada), **Ahorro** (reporte) y **Perfil**
-(suscripción / Hazte Plus). — Fase 5.
+## Flujo (Fase 6 — caso Walmart)
+Registro/Login → **Feed** (tarjetas grandes con la imagen del platillo como héroe,
+precio/porción, rating ⭐, badges "Rescátalo 🌿" y % de descuento; filtros Para ti /
+Ofertas / Top / Comunidad) → **Detalle** (imagen, precio, ahorro, ingredientes, pasos,
+opiniones + escribir reseña, "Cociné esto 🌿" que registra ahorro). Barra inferior:
+**Inicio · Podio 🏆 (top ahorradores/eco) · Subir 👩‍🍳 (receta de comunidad → moderación)
+· Ahorro 💰 · Perfil (avatar emoji, impacto, Hazte Plus)**.
 
-> **Notificaciones push (FCM):** la app ya sube su token vía `repo.registrarToken(...)`
-> y el backend lo persiste. Falta la pieza de despliegue: agregar el SDK de Firebase
-> Messaging (dependencia + `FirebaseMessagingService`) para **obtener** el token del
-> dispositivo y el permiso `POST_NOTIFICATIONS` (Android 13+). Las alertas "úsalo
-> primero" ya funcionan in-app por `GET /notifications`.
+> El usuario ya no gestiona despensa: las recetas vienen de la tienda (rescate de
+> inventario por caducar) y de la comunidad. Sin `imagen_url`, la tarjeta pinta un
+> degradado determinista + emoji del platillo (Coil carga la imagen cuando existe).
 
 ## Estructura
 ```

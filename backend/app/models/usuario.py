@@ -42,6 +42,8 @@ class Usuario(Base):
     )
     # Suspender cuenta (admin). False => no puede iniciar sesión / usar la API.
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # Caso Walmart (Fase 6): avatar del perfil (emoji elegido por el usuario).
+    avatar: Mapped[str] = mapped_column(String(16), default="🧑‍🍳", nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

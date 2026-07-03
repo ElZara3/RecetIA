@@ -8,6 +8,12 @@ API de RecetIA.
 - **Fase 4**: comercio + forecasting (`/comercio/*`, `/comercio/forecast` con XGBoost de `ml/`).
 - **Fase 5**: plan semanal + lista (`/plan`), ahorro (`/savings`), OCR de ticket
   (`/pantry/scan-ticket`, Tesseract), notificaciones (`/notifications`), suscripción.
+- **Fase 6 (caso Walmart)**: rescate de inventario (`POST /comercio/rescate` → recetas IA
+  + ofertas desde productos por caducar), `GET /comercio/dashboard` y `GET /comercio/recipes`
+  (KPIs y desempeño), `GET /feed` (portada de la app), reseñas (`/recipes/{id}/reviews`),
+  recetas de comunidad (`POST /recipes` → moderación), perfil (`PATCH /me`, `GET /me/stats`),
+  podio (`GET /leaderboard?tipo=ahorro|eco`). El ahorro ahora es por usuario.
+  ⚠️ Esquema nuevo: borra/renombra `recetia.db` al actualizar a esta fase.
 
 ## Requisitos
 - Python 3.11+
@@ -47,6 +53,7 @@ python scripts/smoke_test_pantry.py    # Fase 2: hogar → despensa → generate
 python scripts/smoke_test_admin.py     # Fase 3: RBAC + /admin/* (usuarios, recetas, métricas)
 python scripts/smoke_test_comercio.py  # Fase 4: comercio + inventario + ventas + forecast XGBoost
 python scripts/smoke_test_pulido.py    # Fase 5: plan + lista, ahorro, notificaciones, OCR parser
+python scripts/smoke_test_walmart.py   # Fase 6: rescate + feed + reseñas + comunidad + podio + KPIs
 ```
 
 > Fase 5 — OCR: el endpoint `/pantry/scan-ticket` usa **Tesseract**, que debe instalarse

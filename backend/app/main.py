@@ -16,9 +16,12 @@ from app.core.config import settings
 from app.core.db import Base, engine
 from app.routers.admin import router as admin_router
 from app.routers.comercio import router as comercio_router
+from app.routers.feed import router as feed_router
 from app.routers.hogar import router as hogar_router
+from app.routers.leaderboard import router as leaderboard_router
 from app.routers.notifications import router as notifications_router
 from app.routers.pantry import router as pantry_router
+from app.routers.perfil import router as perfil_router
 from app.routers.plan import router as plan_router
 from app.routers.recipes import router as recipes_router
 from app.routers.savings import router as savings_router
@@ -46,9 +49,12 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+app.include_router(perfil_router)
 app.include_router(hogar_router)
 app.include_router(pantry_router)
 app.include_router(recipes_router)
+app.include_router(feed_router)
+app.include_router(leaderboard_router)
 app.include_router(admin_router)
 app.include_router(comercio_router)
 app.include_router(plan_router)

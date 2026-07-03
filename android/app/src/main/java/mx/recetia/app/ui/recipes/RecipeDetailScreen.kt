@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -12,13 +14,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -26,21 +30,31 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import mx.recetia.app.data.RecetiaRepository
+import mx.recetia.app.data.model.RecetaDetalleDto
+import mx.recetia.app.data.model.ResenaDto
 import mx.recetia.app.ui.common.UiState
 import mx.recetia.app.ui.common.toUserMessage
-import mx.recetia.app.ui.common.vmFactory
+import mx.recetia.app.ui.components.BadgePill
 import mx.recetia.app.ui.components.ErrorBox
+import mx.recetia.app.ui.components.HeroImage
 import mx.recetia.app.ui.components.LoadingBox
-import mx.recetia.app.ui.components.UsaPrimeroBadge
+import mx.recetia.app.ui.components.RatingStars
+import mx.recetia.app.ui.theme.UsaPrimeroBg
+import mx.recetia.app.ui.theme.UsaPrimeroFg
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,34 +63,24 @@ fun RecipeDetailScreen(
     recetaId: Int,
     onBack: () -> Unit,
 ) {
-    val vm: RecipeDetailViewModel =
-        viewModel(factory = vmFactory { RecipeDetailViewModel(repo, recetaId) })
-    val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val snackbar = remember { SnackbarHostState() }
+    var estado by remember { mutableStateOf<UiState<RecetaDetalleDto>>(UiState.Loading) }
+    var resenas by remember { mutableStateOf<List<ResenaDto>>(emptyList()) }
+    var intento by remember { mutableIntStateOf(0) }
 
     fun aviso(msg: String) {
         scope.launch { snackbar.showSnackbar(msg) }
     }
 
-    fun agregarAlPlan() {
-        scope.launch {
-            try {
-                repo.agregarAlPlan(recetaId)
-                aviso("Agregada a tu plan semanal")
-            } catch (e: Exception) {
-                aviso(e.toUserMessage())
-            }
-        }
-    }
-
-    fun marcarCocinada(ahorro: Double) {
-        scope.launch {
-            try {
-                repo.registrarAhorro(monto = ahorro, kg = 0.5, descripcion = "Cociné en casa")
-                aviso("¡Registrado! Ahorraste ~$${money(ahorro)}")
-            } catch (e: Exception) {
-                aviso(e.toUserMessage())
-            }
+    LaunchedEffect(intento) {
+        estado = UiState.Loading
+        estado = try {
+            val det = repo.recetaDetalle(recetaId)
+            resenas = runCatching { repo.resenas(recetaId) }.getOrDefault(emptyList())
+            UiState.Success(det)
+        } catch (e: Exception) {
+            UiState.Error(e.toUserMessage())
         }
     }
 
@@ -93,14 +97,39 @@ fun RecipeDetailScreen(
         },
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
-        when (val s = vm.estado) {
+        when (val s = estado) {
             is UiState.Idle -> Unit
             is UiState.Loading -> LoadingBox(Modifier.padding(padding))
-            is UiState.Error -> ErrorBox(s.message, onRetry = vm::cargar, modifier = Modifier.padding(padding))
+            is UiState.Error -> ErrorBox(s.message, onRetry = { intento++ }, modifier = Modifier.padding(padding))
             is UiState.Success -> Detalle(
                 d = s.data,
-                onAgregarAlPlan = { agregarAlPlan() },
-                onMarcarCocinada = { marcarCocinada(s.data.ahorro ?: 0.0) },
+                resenas = resenas,
+                onCocine = { d ->
+                    scope.launch {
+                        try {
+                            val ahorro = d.ahorroEstimadoMxn ?: d.costoPorcion ?: 0.0
+                            repo.registrarAhorro(
+                                monto = ahorro,
+                                kg = 0.5,
+                                recetaId = d.id,
+                            )
+                            aviso("¡Registrado! Ahorraste ~$${"%.2f".format(ahorro)} 🌿")
+                        } catch (e: Exception) {
+                            aviso(e.toUserMessage())
+                        }
+                    }
+                },
+                onResena = { estrellas, comentario ->
+                    scope.launch {
+                        try {
+                            repo.publicarResena(recetaId, estrellas, comentario)
+                            aviso("¡Gracias por tu opinión! ⭐")
+                            intento++ // recarga rating + reseñas
+                        } catch (e: Exception) {
+                            aviso(e.toUserMessage())
+                        }
+                    }
+                },
                 modifier = Modifier.padding(padding),
             )
         }
@@ -109,83 +138,165 @@ fun RecipeDetailScreen(
 
 @Composable
 private fun Detalle(
-    d: RecetaDetalleUi,
-    onAgregarAlPlan: () -> Unit,
-    onMarcarCocinada: () -> Unit,
+    d: RecetaDetalleDto,
+    resenas: List<ResenaDto>,
+    onCocine: (RecetaDetalleDto) -> Unit,
+    onResena: (Int, String?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .verticalScroll(rememberScrollState()),
     ) {
-        Text(d.titulo, style = MaterialTheme.typography.headlineMedium)
-        if (d.usaPorCaducar.isNotEmpty()) {
-            UsaPrimeroBadge("Aprovecha: ${d.usaPorCaducar.joinToString(", ")}")
-        }
-
-        // Métricas costo/ahorro/porciones
-        Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-            d.costoPorcion?.let { Metric("Costo/porción", "$${money(it)}") }
-            d.ahorro?.let { Metric("Ahorro estimado", "$${money(it)}", MaterialTheme.colorScheme.primary) }
-            d.porciones?.let { Metric("Porciones", it.toString()) }
-        }
-
-        // Acciones de Fase 5
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            Button(onClick = onAgregarAlPlan, modifier = Modifier.weight(1f)) {
-                Text("Agregar al plan")
+        // La imagen del platillo es lo principal.
+        Box {
+            HeroImage(
+                titulo = d.titulo,
+                imagenUrl = d.imagenUrl,
+                modifier = Modifier.fillMaxWidth().height(230.dp),
+            )
+            if ("rescate" in d.tags) {
+                BadgePill(
+                    "Rescátalo 🌿",
+                    UsaPrimeroBg,
+                    UsaPrimeroFg,
+                    modifier = Modifier.align(Alignment.TopStart).padding(12.dp),
+                )
             }
-            // "Cociné esto" solo cuando conocemos el ahorro (receta recién generada).
-            if (d.ahorro != null) {
-                OutlinedButton(onClick = onMarcarCocinada, modifier = Modifier.weight(1f)) {
-                    Text("Cociné esto")
+        }
+
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(d.titulo, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    d.comercioNombre?.let { "De $it" } ?: "Receta de la comunidad",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                RatingStars(d.ratingAvg, d.ratingCount)
+            }
+
+            // Métricas: precio, ahorro, porciones.
+            Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                d.costoPorcion?.let { Metric("Costo/porción", "$${"%.2f".format(it)}") }
+                d.ahorroEstimadoMxn?.let {
+                    Metric("Ahorro", "$${"%.2f".format(it)}", MaterialTheme.colorScheme.primary)
+                }
+                d.porciones?.let { Metric("Porciones", it.toString()) }
+            }
+
+            Button(onClick = { onCocine(d) }, modifier = Modifier.fillMaxWidth()) {
+                Text("Cociné esto 🌿  (+ ahorro)")
+            }
+
+            if (d.ingredientes.isNotEmpty()) {
+                Seccion("Ingredientes") {
+                    d.ingredientes.forEach { Vineta(it) }
                 }
             }
-        }
 
-        if (d.ingredientesUsados.isNotEmpty()) {
-            Seccion("Ingredientes que usas") {
-                d.ingredientesUsados.forEach { Vineta(it) }
+            if (d.pasos.isNotEmpty()) {
+                Seccion("Pasos") {
+                    d.pasos.forEachIndexed { i, paso -> Paso(i + 1, paso) }
+                }
             }
-        }
 
-        // "Comprar lo que falta" (§8.4)
-        if (d.ingredientesFaltantes.isNotEmpty()) {
-            Card(
-                colors = androidx.compose.material3.CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                ),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Seccion("Opiniones (${resenas.size})") {
+                ComponerResena(onEnviar = onResena)
+                resenas.forEach { r -> ResenaCard(r) }
+                if (resenas.isEmpty()) {
                     Text(
-                        "Comprar lo que falta",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        "Nadie ha opinado todavía. ¡Sé la primera persona!",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    d.ingredientesFaltantes.forEach {
-                        Text("• $it", color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    }
                 }
-            }
-        }
-
-        if (d.pasos.isNotEmpty()) {
-            Seccion("Preparación") {
-                d.pasos.forEachIndexed { i, paso -> PasoItem(i + 1, paso) }
             }
         }
     }
 }
 
 @Composable
-private fun Seccion(titulo: String, content: @Composable () -> Unit) {
+private fun ComponerResena(onEnviar: (Int, String?) -> Unit) {
+    var estrellas by remember { mutableIntStateOf(0) }
+    var comentario by remember { mutableStateOf("") }
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Tu opinión", style = MaterialTheme.typography.titleMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                repeat(5) { i ->
+                    IconButton(onClick = { estrellas = i + 1 }, modifier = Modifier.size(36.dp)) {
+                        Icon(
+                            imageVector = if (i < estrellas) Icons.Filled.Star else Icons.Filled.StarBorder,
+                            contentDescription = "${i + 1} estrellas",
+                            tint = Color(0xFFF3A712),
+                            modifier = Modifier.size(30.dp),
+                        )
+                    }
+                }
+            }
+            OutlinedTextField(
+                value = comentario,
+                onValueChange = { comentario = it },
+                label = { Text("Comentario (opcional)") },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Button(
+                enabled = estrellas > 0,
+                onClick = {
+                    onEnviar(estrellas, comentario.trim().ifBlank { null })
+                    comentario = ""
+                    estrellas = 0
+                },
+            ) { Text("Publicar reseña") }
+        }
+    }
+}
+
+@Composable
+private fun ResenaCard(r: ResenaDto) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
+                Text(r.avatar, modifier = Modifier.padding(8.dp))
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(r.usuarioNombre, fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.size(8.dp))
+                    RatingStars(r.estrellas.toDouble(), 1)
+                }
+                r.comentario?.let {
+                    Text(it, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Metric(label: String, valor: String, color: Color = Color.Unspecified) {
+    Column {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            valor,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = if (color == Color.Unspecified) MaterialTheme.colorScheme.onSurface else color,
+        )
+    }
+}
+
+@Composable
+private fun Seccion(titulo: String, contenido: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(titulo, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
-        content()
+        contenido()
     }
 }
 
@@ -195,26 +306,16 @@ private fun Vineta(texto: String) {
 }
 
 @Composable
-private fun PasoItem(numero: Int, paso: String) {
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+private fun Paso(n: Int, texto: String) {
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Top) {
         Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
-            Box(Modifier.size(28.dp), contentAlignment = Alignment.Center) {
-                Text(
-                    "$numero",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    textAlign = TextAlign.Center,
-                )
-            }
+            Text(
+                "$n",
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                fontWeight = FontWeight.Bold,
+            )
         }
-        Text(paso, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 2.dp))
-    }
-}
-
-@Composable
-private fun Metric(label: String, valor: String, color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface) {
-    Column {
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(valor, style = MaterialTheme.typography.titleMedium, color = color)
+        Text(texto, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
     }
 }

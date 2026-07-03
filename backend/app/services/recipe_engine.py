@@ -98,6 +98,7 @@ def generar_recetas(
             ingredientes=r.ingredientes_usados,
             costo_porcion=r.costo_porcion_mxn,
             porciones=r.porciones,
+            ahorro_estimado_mxn=r.ahorro_estimado_mxn,
             estado_aprobacion=EstadoAprobacion.borrador,
             autor_id=current.id,
             tags=["ia-generada", "mexicana"],

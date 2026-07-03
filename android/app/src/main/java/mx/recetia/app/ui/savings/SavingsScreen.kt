@@ -8,12 +8,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -37,7 +33,7 @@ import mx.recetia.app.ui.components.LoadingBox
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SavingsScreen(repo: RecetiaRepository, onBack: () -> Unit) {
+fun SavingsScreen(repo: RecetiaRepository) {
     var estado by remember { mutableStateOf<UiState<AhorroReporteDto>>(UiState.Loading) }
     var intento by remember { mutableIntStateOf(0) }
 
@@ -51,16 +47,7 @@ fun SavingsScreen(repo: RecetiaRepository, onBack: () -> Unit) {
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Tu ahorro") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
-                    }
-                },
-            )
-        },
+        topBar = { TopAppBar(title = { Text("Tu ahorro 💰") }) },
     ) { padding ->
         when (val s = estado) {
             is UiState.Idle -> Unit

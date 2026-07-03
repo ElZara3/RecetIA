@@ -3,9 +3,11 @@ package mx.recetia.app.data.model
 import kotlinx.serialization.Serializable
 
 /**
- * DTOs que reflejan el backend FastAPI. Las propiedades van en camelCase; el Json
- * (ver Network.kt) usa SnakeCase, así que `accessToken` <-> `access_token`, etc.
+ * DTOs que reflejan el backend FastAPI (Fase 6 — caso Walmart). Las propiedades van
+ * en camelCase; el Json (ver Network.kt) usa SnakeCase: `accessToken` <-> `access_token`.
  */
+
+// ------------------------------- Auth / perfil ------------------------------- //
 
 @Serializable
 data class RegisterRequest(
@@ -33,71 +35,51 @@ data class UsuarioDto(
     val email: String,
     val nombre: String,
     val rol: String,
+    val avatar: String = "🧑‍🍳",
 )
 
 @Serializable
-data class HogarCreateDto(
-    val tamano: Int,
-    val presupuestoSemanal: Double? = null,
-    val restricciones: List<String> = emptyList(),
-    val equipo: List<String> = emptyList(),
+data class PerfilPatchDto(
+    val nombre: String? = null,
+    val avatar: String? = null,
 )
 
 @Serializable
-data class HogarDto(
+data class MeStatsDto(
+    val ahorroTotalMxn: Double = 0.0,
+    val kgRescatados: Double = 0.0,
+    val vecesCocinadas: Int = 0,
+    val resenasPublicadas: Int = 0,
+    val recetasSubidas: Int = 0,
+    val recetasAprobadas: Int = 0,
+)
+
+// ------------------------------ Feed y recetas ------------------------------ //
+
+@Serializable
+data class OfertaFeedDto(
+    val producto: String,
+    val precioOferta: Double,
+    val precioNormal: Double? = null,
+    val descuentoPct: Int? = null,
+    val vence: String? = null, // "YYYY-MM-DD"
+)
+
+@Serializable
+data class FeedItemDto(
     val id: Int,
-    val usuarioId: Int,
-    val tamano: Int,
-    val presupuestoSemanal: Double? = null,
-    val restricciones: List<String> = emptyList(),
-    val equipo: List<String> = emptyList(),
-)
-
-@Serializable
-data class ItemCreateDto(
-    val nombre: String,
-    val cantidad: Double? = null,
-    val unidad: String? = null,
-    val fechaCaducidad: String? = null, // "YYYY-MM-DD"
-)
-
-@Serializable
-data class ItemDespensaDto(
-    val id: Int,
-    val hogarId: Int,
-    val nombre: String,
-    val cantidad: Double? = null,
-    val unidad: String? = null,
-    val fechaCaducidad: String? = null,
-)
-
-@Serializable
-data class GenerateRequestDto(
-    val hogarId: Int? = null,
-    val despensa: List<ItemCreateDto> = emptyList(),
-    val restricciones: List<String> = emptyList(),
-    val presupuestoSemanal: Double? = null,
-    val nRecetas: Int = 3,
-)
-
-@Serializable
-data class RecetaGeneradaDto(
-    val id: Int? = null,
     val titulo: String,
-    val ingredientesUsados: List<String> = emptyList(),
-    val ingredientesFaltantes: List<String> = emptyList(),
-    val pasos: List<String> = emptyList(),
-    val porciones: Int = 1,
-    val costoPorcionMxn: Double = 0.0,
-    val ahorroEstimadoMxn: Double = 0.0,
-    val usaPorCaducar: List<String> = emptyList(),
-)
-
-@Serializable
-data class GenerateResponseDto(
-    val recetas: List<RecetaGeneradaDto> = emptyList(),
-    val cacheHit: Boolean = false,
-    val fuente: String = "",
+    val imagenUrl: String? = null,
+    val costoPorcion: Double? = null,
+    val porciones: Int? = null,
+    val ahorroEstimadoMxn: Double? = null,
+    val ratingAvg: Double? = null,
+    val ratingCount: Int = 0,
+    val comercioNombre: String? = null,
+    val comunidad: Boolean = false,
+    val rescate: Boolean = false,
+    val tags: List<String> = emptyList(),
+    val oferta: OfertaFeedDto? = null,
 )
 
 @Serializable
@@ -110,39 +92,60 @@ data class RecetaDetalleDto(
     val porciones: Int? = null,
     val estadoAprobacion: String = "borrador",
     val tags: List<String> = emptyList(),
-)
-
-// --- Fase 5: plan, ahorro, notificaciones, suscripción, OCR ---
-
-@Serializable
-data class PlanCreateDto(
-    val recetas: List<Int>,
-    val semana: String? = null,
+    val imagenUrl: String? = null,
+    val ahorroEstimadoMxn: Double? = null,
+    val ratingAvg: Double? = null,
+    val ratingCount: Int = 0,
+    val comercioNombre: String? = null,
+    val comunidad: Boolean = false,
 )
 
 @Serializable
-data class RecetaEnPlanDto(
-    val id: Int,
+data class RecetaUploadDto(
     val titulo: String,
-    val costoPorcion: Double? = null,
+    val ingredientes: List<String>,
+    val pasos: List<String>,
     val porciones: Int? = null,
+    val imagenUrl: String? = null,
+)
+
+// --------------------------------- Reseñas --------------------------------- //
+
+@Serializable
+data class ResenaCreateDto(
+    val estrellas: Int,
+    val comentario: String? = null,
 )
 
 @Serializable
-data class PlanDto(
+data class ResenaDto(
     val id: Int,
-    val hogarId: Int,
-    val semana: String,
-    val recetas: List<RecetaEnPlanDto> = emptyList(),
+    val usuarioNombre: String,
+    val avatar: String = "🧑‍🍳",
+    val estrellas: Int,
+    val comentario: String? = null,
+    val createdAt: String = "",
+)
+
+// ---------------------------------- Podio ---------------------------------- //
+
+@Serializable
+data class LeaderboardEntryDto(
+    val posicion: Int,
+    val nombre: String,
+    val avatar: String = "🧑‍🍳",
+    val valor: Double = 0.0,
+    val esUsuario: Boolean = false,
 )
 
 @Serializable
-data class ListaComprasDto(
-    val semana: String,
-    val faltan: List<String> = emptyList(),
-    val yaTienes: List<String> = emptyList(),
-    val porCategoria: Map<String, List<String>> = emptyMap(),
+data class LeaderboardDto(
+    val tipo: String = "ahorro",
+    val top: List<LeaderboardEntryDto> = emptyList(),
+    val yo: LeaderboardEntryDto? = null,
 )
+
+// --------------------------------- Ahorro ---------------------------------- //
 
 @Serializable
 data class AhorroCreateDto(
@@ -150,6 +153,7 @@ data class AhorroCreateDto(
     val kgRescatados: Double = 0.0,
     val descripcion: String? = null,
     val fecha: String? = null,
+    val recetaId: Int? = null,
 )
 
 @Serializable
@@ -169,14 +173,7 @@ data class AhorroReporteDto(
     val recientes: List<EventoAhorroDto> = emptyList(),
 )
 
-@Serializable
-data class NotificacionDto(
-    val tipo: String,
-    val titulo: String,
-    val mensaje: String,
-    val producto: String? = null,
-    val fechaCaducidad: String? = null,
-)
+// ------------------------------- Suscripción ------------------------------- //
 
 @Serializable
 data class SuscripcionDto(
@@ -189,17 +186,4 @@ data class SuscripcionDto(
 data class SuscripcionUpgradeDto(
     val plan: String = "plus",
     val periodo: String? = "mensual",
-)
-
-@Serializable
-data class TokenRegisterDto(
-    val token: String,
-    val plataforma: String = "android",
-)
-
-@Serializable
-data class ScanResultadoDto(
-    val items: List<String> = emptyList(),
-    val agregados: Int = 0,
-    val textoOcr: String? = null,
 )

@@ -1,11 +1,14 @@
 import type {
   Comercio,
+  Dashboard,
   EstadoAprobacion,
   Forecast,
   Metrics,
   Oferta,
   Producto,
   RecetaAdmin,
+  RecetaComercio,
+  RescateResumen,
   Rol,
   Token,
   Usuario,
@@ -116,4 +119,10 @@ export const api = {
   addOffer: (body: { producto: string; precio_oferta: number; vence?: string | null }) =>
     request<Oferta>("POST", "/comercio/offers", body),
   seedDemo: () => request<{ ventas_creadas: number; productos: number }>("POST", "/comercio/seed-demo"),
+
+  // Comercio (Fase 6 — caso Walmart)
+  dashboard: () => request<Dashboard>("GET", "/comercio/dashboard"),
+  rescate: (body: { n_recetas: number; dias: number } = { n_recetas: 3, dias: 5 }) =>
+    request<RescateResumen>("POST", "/comercio/rescate", body),
+  comercioRecipes: () => request<RecetaComercio[]>("GET", "/comercio/recipes"),
 };

@@ -22,9 +22,11 @@ from app.models.plan import (
 )
 from app.models.receta import EstadoAprobacion, Receta
 from app.models.receta_cache import RecetaCache
+from app.models.resena import ResenaReceta
 from app.models.usuario import RolUsuario, Usuario
 
 __all__ = [
+    "ResenaReceta",
     "Usuario",
     "RolUsuario",
     "Hogar",

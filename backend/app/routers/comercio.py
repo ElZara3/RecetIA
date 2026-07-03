@@ -1,10 +1,10 @@
-"""Endpoints del lado comercio (§6/§10). Rol comercio (o admin)."""
+"""Endpoints del lado comercio (§6/§10 + Fase 6 caso Walmart). Rol comercio (o admin)."""
 
 import random
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
@@ -16,6 +16,9 @@ from app.models.comercio import (
     ProductoInventario,
     VentaRegistro,
 )
+from app.models.plan import EventoAhorro
+from app.models.receta import Receta
+from app.models.resena import ResenaReceta
 from app.models.usuario import RolUsuario, Usuario
 from app.schemas.comercio import (
     ComercioCreate,
@@ -28,7 +31,14 @@ from app.schemas.comercio import (
     VentaCreate,
     VentaOut,
 )
-from app.services import forecasting
+from app.schemas.social import (
+    DashboardComercio,
+    ProductoRiesgo,
+    RecetaComercioOut,
+    RescateRequest,
+    RescateResumen,
+)
+from app.services import forecasting, rescate
 
 router = APIRouter(
     prefix="/comercio",
@@ -271,3 +281,148 @@ def seed_demo(
         "productos": len(_PRODUCTOS_DEMO),
         "ventas_creadas": ventas_n,
     }
+
+
+# ----------------- Fase 6 — caso Walmart: dashboard + rescate ----------------- #
+
+
+@router.get(
+    "/recipes",
+    response_model=list[RecetaComercioOut],
+    summary="Recetas publicadas por mi comercio (con rating y desempeño)",
+)
+def mis_recetas(
+    db: Session = Depends(get_db),
+    current: Usuario = Depends(get_current_user),
+) -> list[RecetaComercioOut]:
+    comercio = _comercio_obligatorio(db, current)
+    recetas = db.scalars(
+        select(Receta)
+        .where(Receta.comercio_id == comercio.id)
+        .order_by(Receta.created_at.desc())
+        .limit(100)
+    ).all()
+    salida: list[RecetaComercioOut] = []
+    for r in recetas:
+        avg, cnt = db.execute(
+            select(func.avg(ResenaReceta.estrellas), func.count(ResenaReceta.id)).where(
+                ResenaReceta.receta_id == r.id
+            )
+        ).one()
+        cocinadas = db.scalar(
+            select(func.count(EventoAhorro.id)).where(EventoAhorro.receta_id == r.id)
+        )
+        salida.append(
+            RecetaComercioOut(
+                id=r.id,
+                titulo=r.titulo,
+                rating_avg=round(float(avg), 1) if avg is not None else None,
+                rating_count=int(cnt or 0),
+                veces_cocinadas=int(cocinadas or 0),
+                rescate="rescate" in (r.tags or []),
+                created_at=r.created_at,
+            )
+        )
+    return salida
+
+
+@router.post(
+    "/rescate",
+    response_model=RescateResumen,
+    summary="Generar recetas + ofertas desde productos por caducar",
+)
+def generar_rescate(
+    data: RescateRequest | None = None,
+    db: Session = Depends(get_db),
+    current: Usuario = Depends(get_current_user),
+) -> RescateResumen:
+    comercio = _comercio_obligatorio(db, current)
+    params = data or RescateRequest()
+    resumen = rescate.generar_rescate(
+        db, current, comercio, n_recetas=params.n_recetas, dias=params.dias
+    )
+    return RescateResumen(**resumen)
+
+
+@router.get(
+    "/dashboard",
+    response_model=DashboardComercio,
+    summary="KPIs del comercio (inventario, riesgo, recetas, impacto)",
+)
+def dashboard(
+    db: Session = Depends(get_db),
+    current: Usuario = Depends(get_current_user),
+) -> DashboardComercio:
+    comercio = _comercio_obligatorio(db, current)
+    hoy = date.today()
+
+    productos_total = int(
+        db.scalar(
+            select(func.count(ProductoInventario.id)).where(
+                ProductoInventario.comercio_id == comercio.id
+            )
+        )
+        or 0
+    )
+    riesgo = rescate.productos_en_riesgo(db, comercio.id)
+    ofertas_activas = int(
+        db.scalar(
+            select(func.count(Oferta.id)).where(
+                Oferta.comercio_id == comercio.id,
+                (Oferta.vence.is_(None)) | (Oferta.vence >= hoy),
+            )
+        )
+        or 0
+    )
+    recetas_ids = list(
+        db.scalars(select(Receta.id).where(Receta.comercio_id == comercio.id)).all()
+    )
+    recetas_publicadas = len(recetas_ids)
+
+    rating_promedio: float | None = None
+    resenas_total = 0
+    veces_cocinadas = 0
+    ahorro_clientes = 0.0
+    kg_rescatados = 0.0
+    if recetas_ids:
+        avg, cnt = db.execute(
+            select(func.avg(ResenaReceta.estrellas), func.count(ResenaReceta.id)).where(
+                ResenaReceta.receta_id.in_(recetas_ids)
+            )
+        ).one()
+        rating_promedio = round(float(avg), 1) if avg is not None else None
+        resenas_total = int(cnt or 0)
+        monto, kg, n = db.execute(
+            select(
+                func.coalesce(func.sum(EventoAhorro.monto_ahorrado), 0.0),
+                func.coalesce(func.sum(EventoAhorro.kg_rescatados), 0.0),
+                func.count(EventoAhorro.id),
+            ).where(EventoAhorro.receta_id.in_(recetas_ids))
+        ).one()
+        ahorro_clientes = round(float(monto), 2)
+        kg_rescatados = round(float(kg), 2)
+        veces_cocinadas = int(n)
+
+    return DashboardComercio(
+        productos_total=productos_total,
+        en_riesgo_total=len(riesgo),
+        en_riesgo=[
+            ProductoRiesgo(
+                nombre=p.nombre,
+                existencias=p.existencias,
+                fecha_caducidad=p.fecha_caducidad,
+                dias_restantes=(
+                    (p.fecha_caducidad - hoy).days if p.fecha_caducidad else None
+                ),
+                precio=p.precio,
+            )
+            for p in riesgo[:10]
+        ],
+        ofertas_activas=ofertas_activas,
+        recetas_publicadas=recetas_publicadas,
+        rating_promedio=rating_promedio,
+        resenas_total=resenas_total,
+        veces_cocinadas=veces_cocinadas,
+        ahorro_clientes_mxn=ahorro_clientes,
+        kg_rescatados=kg_rescatados,
+    )

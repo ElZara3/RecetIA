@@ -99,7 +99,13 @@ class Oferta(Base):
     )
     producto: Mapped[str] = mapped_column(String(120), nullable=False)
     precio_oferta: Mapped[float] = mapped_column(Float, nullable=False)
+    # Precio normal del producto (para mostrar el % de descuento en la app).
+    precio_normal: Mapped[float | None] = mapped_column(Float, nullable=True)
     vence: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # Caso Walmart (Fase 6): receta de rescate ligada a esta oferta.
+    receta_id: Mapped[int | None] = mapped_column(
+        ForeignKey("recetas.id", ondelete="SET NULL"), index=True, nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
     )

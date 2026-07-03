@@ -38,8 +38,17 @@ class EventoAhorro(Base):
     __tablename__ = "eventos_ahorro"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    hogar_id: Mapped[int] = mapped_column(
-        ForeignKey("hogares.id", ondelete="CASCADE"), index=True, nullable=False
+    # Caso Walmart (Fase 6): el ahorro es del USUARIO (leaderboards, perfil).
+    # hogar_id se mantiene como legado opcional (flujo de despensa de Fases 2-5).
+    usuario_id: Mapped[int | None] = mapped_column(
+        ForeignKey("usuarios.id", ondelete="CASCADE"), index=True, nullable=True
+    )
+    hogar_id: Mapped[int | None] = mapped_column(
+        ForeignKey("hogares.id", ondelete="CASCADE"), index=True, nullable=True
+    )
+    # Receta que originó el ahorro ("cociné esto") — permite KPIs por comercio.
+    receta_id: Mapped[int | None] = mapped_column(
+        ForeignKey("recetas.id", ondelete="SET NULL"), index=True, nullable=True
     )
     fecha: Mapped[date] = mapped_column(Date, index=True, nullable=False)
     monto_ahorrado: Mapped[float] = mapped_column(Float, default=0, nullable=False)

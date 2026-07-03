@@ -41,10 +41,13 @@ class ListaCompras(BaseModel):
 
 # --- Ahorro (§6 /savings) ---
 class AhorroCreate(BaseModel):
-    monto_ahorrado: float = Field(ge=0)
-    kg_rescatados: float = Field(default=0, ge=0)
+    # Topes por evento: el ahorro es autorreportado y alimenta el podio (anti-trampa).
+    monto_ahorrado: float = Field(ge=0, le=2000)
+    kg_rescatados: float = Field(default=0, ge=0, le=50)
     descripcion: str | None = Field(default=None, max_length=200)
     fecha: date | None = None
+    # Fase 6: receta que se cocinó ("cociné esto") — habilita KPIs por comercio.
+    receta_id: int | None = None
 
 
 class EventoAhorroOut(BaseModel):

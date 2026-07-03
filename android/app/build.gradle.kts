@@ -18,7 +18,7 @@ android {
         // URL del backend. En el emulador de Android se usa 10.0.2.2 (alias al
         // localhost del anfitrión). En un teléfono físico debe ser la IP LAN de la
         // PC donde corre uvicorn --host 0.0.0.0 --port 8000 (misma Wi-Fi).
-        buildConfigField("String", "BASE_URL", "\"http://172.22.25.3:8000/\"")
+        buildConfigField("String", "BASE_URL", "\"http://192.168.100.93:8000/\"")
     }
 
     buildTypes {
@@ -72,6 +72,9 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.7")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+
+    // Imágenes (feed visual — imagen del platillo como héroe)
+    implementation("io.coil-kt:coil-compose:2.6.0")
 
     // Red + serialización
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")

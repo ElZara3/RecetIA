@@ -86,3 +86,10 @@ class RecetaOut(BaseModel):
     estado_aprobacion: EstadoAprobacion
     tags: list[str]
     created_at: datetime
+    # Fase 6 — caso Walmart: imagen héroe, ahorro y contexto social/comercial.
+    imagen_url: str | None = None
+    ahorro_estimado_mxn: float | None = None
+    rating_avg: float | None = None
+    rating_count: int = 0
+    comercio_nombre: str | None = None
+    comunidad: bool = False
